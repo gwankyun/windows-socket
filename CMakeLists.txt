@@ -11,7 +11,7 @@ include(CMakePrintHelpers)
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/bin)
 
 # 項目名
-project(WindowsSocket})
+project(WindowsSocket)
 
 # 設置編譯選項
 if(${MSVC})

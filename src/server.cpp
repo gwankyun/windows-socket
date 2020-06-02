@@ -1,7 +1,9 @@
 ﻿// cpp.cpp : 此文件包含 "main" 函数。程序执行将在此处开始并结束。
 //
 
-//#define _WINSOCK_DEPRECATED_NO_WARNINGS
+#define _CRT_SECURE_NO_WARNINGS
+#define _WINSOCK_DEPRECATED_NO_WARNINGS
+#include <cstdio>
 #include <iostream>
 #include <WinSock2.h>
 #include <string>
@@ -106,6 +108,12 @@ int main()
             std::cout << "accept: " << WSAGetLastError() << std::endl;
             return 1;
         }
+
+        char info[128];
+        memset(info, '\0', sizeof(info));
+
+        sprintf(info, "ip: %s port: %d", inet_ntoa(addrClient.sin_addr), addrClient.sin_port);
+        std::cout << info << std::endl;
 
         SocketGuard clientGuard(client);
 
