@@ -14,9 +14,7 @@ set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/bin)
 project(WindowsSocket)
 
 # 設置編譯選項
-if(${MSVC})
-	add_compile_options(/W4 /MP)
-endif()
+add_compile_options("$<$<CXX_COMPILER_ID:MSVC>:/W4;/MP>")
 
 # 執行文件
 add_executable(server "")
