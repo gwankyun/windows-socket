@@ -20,6 +20,9 @@ add_compile_options("$<$<CXX_COMPILER_ID:MSVC>:/W4;/MP>")
 add_executable(server "")
 add_executable(client "")
 
+target_include_directories(server PRIVATE include)
+target_include_directories(client PRIVATE include)
+
 # 添加源碼
 target_sources(server PRIVATE src/server.cpp)
 target_sources(client PRIVATE src/client.cpp)

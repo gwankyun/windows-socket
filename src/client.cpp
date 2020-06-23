@@ -3,49 +3,10 @@
 
 #define _WINSOCK_DEPRECATED_NO_WARNINGS
 #include <iostream>
-#include <WinSock2.h>
 #include <string>
+#include "socket.h"
 
 #pragma comment(lib, "ws2_32.lib")
-
-class WSAGuard
-{
-public:
-    WSAGuard()
-    {
-    }
-
-    ~WSAGuard()
-    {
-        WSACleanup();
-    }
-
-private:
-
-};
-
-class SocketGuard
-{
-public:
-    SocketGuard() : socket(INVALID_SOCKET)
-    {
-    }
-
-    SocketGuard(SOCKET _socket) : socket(_socket)
-    {
-    }
-
-    ~SocketGuard()
-    {
-        if (socket != INVALID_SOCKET)
-        {
-            closesocket(socket);
-        }
-    }
-
-private:
-    SOCKET socket;
-};
 
 int main()
 {
