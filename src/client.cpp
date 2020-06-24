@@ -6,8 +6,6 @@
 #include <string>
 #include "socket.h"
 
-#pragma comment(lib, "ws2_32.lib")
-
 int main()
 {
     int err;

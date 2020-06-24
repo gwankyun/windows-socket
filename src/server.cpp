@@ -2,12 +2,11 @@
 //
 
 #define _CRT_SECURE_NO_WARNINGS
+#define _WINSOCK_DEPRECATED_NO_WARNINGS
 #include <cstdio>
 #include <iostream>
 #include <string>
 #include "socket.h"
-
-#pragma comment(lib, "ws2_32.lib")
 
 int main()
 {
