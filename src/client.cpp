@@ -5,6 +5,7 @@
 #include <iostream>
 #include <string>
 #include "socket.h"
+#include "ScopeGuard/ScopeGuard.hpp"
 
 int main()
 {
@@ -22,7 +23,10 @@ int main()
         return 1;
     }
 
-    WSAGuard wasGuard;
+    ON_SCOPE_EXIT([]()
+    {
+        WSACleanup();
+    });
 
     SOCKET client = socket(AF_INET, SOCK_STREAM, 0);
     if (client == INVALID_SOCKET)
@@ -31,14 +35,21 @@ int main()
         return 1;
     }
 
-    SocketGuard clientGuard(client);
+    ON_SCOPE_EXIT([&client]()
+    {
+        if (client != INVALID_SOCKET)
+        {
+            closesocket(client);
+            client = INVALID_SOCKET;
+        }
+    });
 
     SOCKADDR_IN addr;
     addr.sin_family = AF_INET;
     addr.sin_addr.s_addr = inet_addr("127.0.0.1");
     addr.sin_port = htons(12345);
 
-    err = connect(client, (SOCKADDR*)&addr, sizeof(SOCKADDR));
+    err = connect(client, reinterpret_cast<SOCKADDR*>(&addr), sizeof(SOCKADDR));
 
     if (err == INVALID_SOCKET)
     {
