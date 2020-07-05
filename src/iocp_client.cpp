@@ -1,4 +1,4 @@
-﻿#define _WINSOCK_DEPRECATED_NO_WARNINGS
+#define _WINSOCK_DEPRECATED_NO_WARNINGS
 #include <WinSock2.h>
 #include <iostream>
 #include <string>
@@ -15,6 +15,7 @@ int main()
     if (err != 0)
     {
         std::cout << "WSAStartup: " << err << std::endl;
+        printf("[%s %d] WSAStartup faild:\n", __func__, __LINE__);
         return 1;
     }
 
@@ -23,7 +24,7 @@ int main()
     SOCKET client = socket(AF_INET, SOCK_STREAM, 0);
     if (client == INVALID_SOCKET)
     {
-        std::cout << "socket: " << WSAGetLastError() << std::endl;
+        printf("[%s %d] socket error: %d\n", __func__, __LINE__, WSAGetLastError());
         return 1;
     }
 
@@ -38,14 +39,28 @@ int main()
 
     if (err == INVALID_SOCKET)
     {
-        std::cout << "connect: " << WSAGetLastError() << std::endl;
+        printf("[%s %d] connect error: %d\n", __func__, __LINE__, WSAGetLastError());
+        return 1;
+    }
+
+    int len;
+
+    std::string str = "Data from client!";
+
+    len = send(client, str.c_str(), static_cast<int>(str.size()), 0);
+    printf("[%s %d] send: %d\n", __func__, __LINE__, len);
+    if (len == 0)
+    {
+        return 1;
+    }
+    else if (len == SOCKET_ERROR)
+    {
+        printf("[%s %d] send error: %d\n", __func__, __LINE__, WSAGetLastError());
         return 1;
     }
 
     char recvData[1024];
     memset(recvData, '\0', sizeof(recvData));
-
-    int len;
 
     len = recv(client, recvData, sizeof(recvData), 0);
     if (len == 0)
@@ -54,24 +69,11 @@ int main()
     }
     else if (len == SOCKET_ERROR)
     {
-        std::cout << "recv: " << WSAGetLastError() << std::endl;
+        printf("[%s %d] recv error: %d\n", __func__, __LINE__, WSAGetLastError());
         return 1;
     }
 
-    std::cout << "recv: " << recvData << std::endl;
-
-    std::string str = "Data from client!";
-
-    len = send(client, str.c_str(), static_cast<int>(str.size()), 0);
-    if (len == 0)
-    {
-        return 1;
-    }
-    else if (len == SOCKET_ERROR)
-    {
-        std::cout << "send: " << WSAGetLastError() << std::endl;
-        return 1;
-    }
+    printf("[%s %d] recv len: %d buf: %s\n", __func__, __LINE__, len, recvData);
 
     return 0;
 }

@@ -1,20 +1,15 @@
-﻿// cpp.cpp : 此文件包含 "main" 函数。程序执行将在此处开始并结束。
-//
-
-#define _WINSOCK_DEPRECATED_NO_WARNINGS
+﻿#define _WINSOCK_DEPRECATED_NO_WARNINGS
+#include <WinSock2.h>
 #include <cstdio>
 #include <iostream>
 #include <string>
-#include "socket.h"
 #include "ScopeGuard/ScopeGuard.hpp"
 
 int main()
 {
     int err;
-    WORD wVersionRequested;
+    WORD wVersionRequested = MAKEWORD(2, 2);
     WSADATA lpWSAData;
-
-    wVersionRequested = MAKEWORD(2, 2);
 
     err = WSAStartup(wVersionRequested, &lpWSAData);
 
@@ -24,10 +19,7 @@ int main()
         return 1;
     }
 
-    ON_SCOPE_EXIT([]()
-    {
-        WSACleanup();
-    });
+    ON_SCOPE_EXIT(WSACleanup);
 
     SOCKET server = socket(AF_INET, SOCK_STREAM, 0);
     if (server == INVALID_SOCKET)
@@ -36,14 +28,7 @@ int main()
         return 1;
     }
 
-    ON_SCOPE_EXIT([&server]()
-    {
-        if (server != INVALID_SOCKET)
-        {
-            closesocket(server);
-            server = INVALID_SOCKET;
-        }
-    });
+    ON_SCOPE_EXIT(closesocket, server);
 
     SOCKADDR_IN addrServer;
     addrServer.sin_family = AF_INET;
@@ -83,17 +68,10 @@ int main()
         sprintf_s(info, sizeof(info), "ip: %s port: %d", inet_ntoa(addrClient.sin_addr), addrClient.sin_port);
         std::cout << info << std::endl;
 
-        ON_SCOPE_EXIT([&client]()
-        {
-            if (client != INVALID_SOCKET)
-            {
-                closesocket(client);
-                client = INVALID_SOCKET;
-            }
-        });
+        ON_SCOPE_EXIT(closesocket, client);
 
         std::string str = "Data from server!";
-        len = send(client, str.c_str(), (int)str.size(), 0);
+        len = send(client, str.c_str(), static_cast<int>(str.size()), 0);
         if (len == 0)
         {
             return 1;

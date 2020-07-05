@@ -23,17 +23,27 @@ add_compile_options(
 # 執行文件
 add_executable(server "")
 add_executable(client "")
+add_executable(iocp_server "")
+add_executable(iocp_client "")
 
 # 引用目錄
 target_include_directories(server PRIVATE include)
 target_include_directories(client PRIVATE include)
+target_include_directories(iocp_server PRIVATE include)
+target_include_directories(iocp_client PRIVATE include)
 
 # 引用庫
 target_link_libraries(server PRIVATE
     "$<$<CXX_COMPILER_ID:MSVC>:ws2_32>")
 target_link_libraries(client PRIVATE
     "$<$<CXX_COMPILER_ID:MSVC>:ws2_32>")
+target_link_libraries(iocp_server PRIVATE
+    "$<$<CXX_COMPILER_ID:MSVC>:ws2_32>;mswsock")
+target_link_libraries(iocp_client PRIVATE
+    "$<$<CXX_COMPILER_ID:MSVC>:ws2_32>")
 
 # 添加源碼
-target_sources(server PRIVATE src/server.cpp include/socket.h)
-target_sources(client PRIVATE src/client.cpp include/socket.h)
+target_sources(server PRIVATE src/server.cpp)
+target_sources(client PRIVATE src/client.cpp)
+target_sources(iocp_server PRIVATE src/iocp_server.cpp)
+target_sources(iocp_client PRIVATE src/iocp_client.cpp)
