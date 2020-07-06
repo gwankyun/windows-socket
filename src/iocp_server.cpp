@@ -30,7 +30,7 @@ struct Operation
     {
         if (buffer.buf != NULL)
         {
-            delete buffer.buf;
+            delete[] buffer.buf;
         }
     }
 
