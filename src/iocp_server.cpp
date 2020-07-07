@@ -6,20 +6,51 @@
 #include <iostream>
 #include <string>
 #include <functional>
+#include <cassert>
 #include "ScopeGuard/ScopeGuard.hpp"
 
-enum class OperationType
+LPFN_ACCEPTEX acceptEx;
+
+void logPrintf(const char* func, int line, int funcLen, const char* format, ...)
+{
+    char buffer[256];
+    memset(buffer, '\0', sizeof(buffer));
+
+    va_list ap;
+    va_start(ap, format);
+    vsprintf_s(buffer, sizeof(buffer), format, ap);
+    va_end(ap);
+
+    char out[512];
+    memset(out, '\0', sizeof(out));
+    sprintf_s(out, sizeof(out), "[%-*.*s:% 4d] %s\n", funcLen, funcLen, func, line, buffer);
+    printf("%s", out);
+}
+
+void logPrintf(const char* func, int line, int funcLen)
+{
+    logPrintf(func, line, funcLen, "%s", "");
+}
+
+#define LOG(...) \
+    logPrintf(__func__, __LINE__, 15, ##__VA_ARGS__)
+
+enum class OperationType : uint8_t
 {
     unknown = 0,
     recv,
-    send
+    send,
+    accept
 };
 
 struct Operation
 {
     OVERLAPPED overlapped;
+    WSABUF buffer;
+    SOCKET socket;
+    OperationType type;
 
-    Operation() : type(OperationType::unknown)
+    Operation() : type(OperationType::unknown), socket(INVALID_SOCKET)
     {
         memset(&overlapped, 0, sizeof(OVERLAPPED));
         buffer.buf = NULL;
@@ -32,11 +63,46 @@ struct Operation
         {
             delete[] buffer.buf;
         }
+        LOG();
     }
 
-    WSABUF buffer;
-    OperationType type;
 };
+
+SOCKET g_client;
+
+void async_accept(SOCKET server)
+{
+    Operation* operation = new Operation();
+    operation->buffer.buf = new CHAR[1024];
+    memset(operation->buffer.buf, 0, 1024);
+    operation->buffer.len = 1024;
+    operation->type = OperationType::accept;
+    operation->socket = WSASocket(AF_INET, SOCK_STREAM, 0, NULL, 0, WSA_FLAG_OVERLAPPED);
+    //g_client = operation->socket;
+    LOG("%d", operation);
+    LOG("client: %d", operation->socket);
+
+    DWORD bytesReceived;
+    BOOL result = acceptEx(
+        server, operation->socket,
+        &operation->buffer, 0,
+        sizeof(sockaddr_in) + 16, sizeof(sockaddr_in) + 16,
+        //&bytesReceived, &(operation->overlapped));
+        &bytesReceived, (LPOVERLAPPED)operation);
+    if (result == FALSE)
+    {
+        int error = WSAGetLastError();
+        if (error != ERROR_IO_PENDING)
+        {
+            LOG("AcceptEx error: %d", error);
+        }
+    }
+}
+
+void async_recv(SOCKET socket_, char* buf_, uint32_t len_)
+{
+
+}
 
 struct CompletionKey
 {
@@ -45,42 +111,92 @@ struct CompletionKey
 
 DWORD WINAPI process(LPVOID lpParam)
 {
-    HANDLE competionPort = (HANDLE)lpParam;
+    HANDLE completionPort = (HANDLE)lpParam;
     DWORD bytesTransferred = 0;
     CompletionKey* completionKey = NULL;
     Operation* operation = NULL;
+    //LPOVERLAPPED overlapped = NULL;
 
     while (true)
     {
         if (GetQueuedCompletionStatus(
-            competionPort,
+            completionPort,
             &bytesTransferred,
             (PULONG_PTR)&completionKey,
             (LPOVERLAPPED*)&operation,
+            //(LPOVERLAPPED*)&overlapped,
             INFINITE) == 0)
         {
             SOCKET socket = completionKey->socket;
             if (operation == NULL)
+            //if (overlapped == NULL)
             {
-                printf("[%s %d] GetQueuedCompletionStatus socket: %d error: %d\n", __func__, __LINE__,
-                    static_cast<int>(socket), GetLastError());
-                closesocket(socket);
-                delete completionKey;
+                LOG("GetQueuedCompletionStatus socket: %d error: %d", static_cast<int>(socket), GetLastError());
+                //closesocket(socket);
+                //delete completionKey;
                 return 0;
             }
             else
             {
-                printf("[%s %d] GetQueuedCompletionStatus socket: %d error: %d\n", __func__, __LINE__,
-                    static_cast<int>(completionKey->socket), GetLastError());
-                closesocket(socket);
-                delete completionKey;
-                delete operation;
+                LOG("GetQueuedCompletionStatus socket: %d error: %d", static_cast<int>(socket), GetLastError());
+                //closesocket(socket);
+                //delete completionKey;
+                //delete operation;
             }
+            closesocket(socket);
+            delete completionKey;
+            delete operation;
             continue;
         }
 
+        //Operation* operation = (Operation*)(overlapped);
+
+        LOG("socket: %d", completionKey->socket);
+
         switch (operation->type)
         {
+        case OperationType::accept:
+        {
+            //setsockopt(operation->socket, SOL_SOCKET, SO_UPDATE_ACCEPT_CONTEXT,
+            //    (char*)&(completionKey->socket), sizeof(completionKey->socket));
+            LOG("%d", operation);
+            SOCKET server = completionKey->socket;
+            SOCKET client = operation->socket;
+            LOG("client: %d", client);
+            //Operation* recvOperation = new Operation();
+            Operation* recvOperation = operation;
+            delete[] recvOperation->buffer.buf;
+            recvOperation->buffer.buf = new CHAR[1024];
+            memset(recvOperation->buffer.buf, 0, 1024);
+            recvOperation->buffer.len = 1024;
+            recvOperation->type = OperationType::recv;
+            recvOperation->socket = client;
+
+            CompletionKey* clientCompletionKey = new CompletionKey();
+            clientCompletionKey->socket = client;
+            LOG("completionPort: %d", completionPort);
+            //assert(client == g_client);
+            HANDLE handle = CreateIoCompletionPort((HANDLE)client, completionPort, (ULONG_PTR)clientCompletionKey, 0);
+            if (handle == NULL)
+            {
+                LOG("error: %d", GetLastError());
+            }
+
+            DWORD flags = 0;
+            DWORD bytesdRecvd = 0;
+            int result = WSARecv(client, &recvOperation->buffer, 1, &bytesdRecvd, &flags, &recvOperation->overlapped, NULL);
+            if (result != 0)
+            {
+                int error = WSAGetLastError();
+                if (error != WSA_IO_PENDING)
+                {
+                    LOG("WSARecv error: %d", error);
+                }
+            }
+            //delete operation;
+            async_accept(server);
+            break;
+        }
         case OperationType::recv:
         {
             SOCKET client = completionKey->socket;
@@ -91,10 +207,11 @@ DWORD WINAPI process(LPVOID lpParam)
                 delete operation;
                 continue;
             }
-            printf("[%s %d] recv: %s\n", __func__, __LINE__, operation->buffer.buf);
-            delete operation;
+            LOG("recv: %s", operation->buffer.buf);
+            //delete operation;
 
-            Operation* sendOperation = new Operation();
+            //Operation* sendOperation = new Operation();
+            Operation* sendOperation = operation;
             std::string str = "Data from server!";
             sendOperation->buffer.buf = new CHAR[str.size()];
             memcpy(sendOperation->buffer.buf, str.c_str(), str.size());
@@ -109,7 +226,7 @@ DWORD WINAPI process(LPVOID lpParam)
                 int error = WSAGetLastError();
                 if (error != WSA_IO_PENDING)
                 {
-                    printf("[%s %d] WSASend: %d\n", __func__, __LINE__, error);
+                    LOG("WSASend error: %d", error);
                 }
             }
             break;
@@ -124,8 +241,8 @@ DWORD WINAPI process(LPVOID lpParam)
                 delete operation;
                 continue;
             }
-            printf("[%s %d] send: %d\n", __func__, __LINE__, bytesTransferred);
-            delete operation;
+            LOG("send: %d", bytesTransferred);
+            //delete operation;
             break;
         }
         default:
@@ -144,7 +261,7 @@ int main()
 
     if (result != 0)
     {
-        printf("[%s %d] WSAStartup failed: %d\n", __func__, __LINE__, result);
+        LOG("WSAStartup failed");
         return 1;
     }
 
@@ -153,7 +270,7 @@ int main()
     HANDLE completionPort = CreateIoCompletionPort(INVALID_HANDLE_VALUE, NULL, 0, 0);
     if (completionPort == NULL)
     {
-        printf("[%s %d] CreateIoCompletionPort failed\n", __func__, __LINE__);
+        LOG("CreateIoCompletionPort failed");
         return 1;
     }
 
@@ -179,18 +296,18 @@ int main()
     result = bind(server, reinterpret_cast<SOCKADDR*>(&addrServer), sizeof(SOCKADDR));
     if (result != 0)
     {
-        printf("[%s %d] bind: %d\n", __func__, __LINE__, WSAGetLastError());
+        LOG("bind error: %d", WSAGetLastError());
         return 1;
     }
 
     result = listen(server, SOMAXCONN);
     if (result != 0)
     {
-        printf("[%s %d] listen: %d\n", __func__, __LINE__, WSAGetLastError());
+        LOG("listen error: %d", WSAGetLastError());
         return 1;
     }
+    LOG("server: %d", server);
 
-    LPFN_ACCEPTEX acceptEx;
     GUID guidAcceptEx = WSAID_ACCEPTEX;
     DWORD bytes = 0;
     result=  WSAIoctl(
@@ -205,50 +322,67 @@ int main()
         NULL);
     if (result != 0)
     {
-        printf("[%s %d] WSAIoctl: %d\n", __func__, __LINE__, WSAGetLastError());
+        LOG("WSAIoctl error: %d", WSAGetLastError());
         return 1;
     }
 
+    //while (true)
+    //{
+    //    SOCKET client = INVALID_SOCKET;
+    //    client = WSAAccept(server, NULL, NULL, NULL, 0);
+    //    if (client == INVALID_SOCKET)
+    //    {
+    //        LOG("WSAAccept error: %d", WSAGetLastError());
+    //        continue;
+    //    }
+    //    LOG("WSAAccept client: %d", client);
+
+    //    CompletionKey* completionKey = new CompletionKey();
+    //    completionKey->socket = client;
+    //    HANDLE handle = CreateIoCompletionPort((HANDLE)client, completionPort, (ULONG_PTR)completionKey, 0);
+    //    if (handle == NULL)
+    //    {
+    //        LOG("CreateIoCompletionPort failed");
+    //        delete completionKey;
+    //        completionKey = NULL;
+    //    }
+
+    //    Operation* operation = new Operation();
+    //    operation->buffer.buf = new CHAR[1024];
+    //    memset(operation->buffer.buf, 0, 1024);
+    //    operation->buffer.len = 1024;
+    //    operation->type = OperationType::recv;
+
+    //    DWORD flags = 0;
+    //    DWORD bytesdRecvd = 0;
+    //    result = WSARecv(client, &operation->buffer, 1, &bytesdRecvd, &flags, &operation->overlapped, NULL);
+    //    if (result != 0)
+    //    {
+    //        int error = WSAGetLastError();
+    //        if (error != WSA_IO_PENDING)
+    //        {
+    //            LOG("WSARecv error: %d", error);
+    //        }
+    //    }
+    //}
+
+    CompletionKey* completionKey = new CompletionKey();
+    completionKey->socket = server;
+    HANDLE handle =  CreateIoCompletionPort((HANDLE)server, completionPort, (ULONG_PTR)completionKey, 0);
+    if (handle == NULL)
+    {
+        LOG("error: %d", GetLastError());
+    }
+    LOG("completionPort: %d", completionPort);
+
+    async_accept(server);
+
     while (true)
     {
-        SOCKET client = INVALID_SOCKET;
-        client = WSAAccept(server, NULL, NULL, NULL, 0);
-        if (client == INVALID_SOCKET)
-        {
-            printf("[%s %d] WSAAccept: %d\n", __func__, __LINE__, WSAGetLastError());
-            continue;
-        }
-
-        CompletionKey* completionKey = new CompletionKey();
-        completionKey->socket = client;
-        HANDLE handle = CreateIoCompletionPort((HANDLE)client, completionPort, (ULONG_PTR)completionKey, 0);
-        if (handle == NULL)
-        {
-            printf("[%s %d] CreateIoCompletionPort failed\n", __func__, __LINE__);
-            delete completionKey;
-            completionKey = NULL;
-        }
-
-        Operation* operation = new Operation();
-        operation->buffer.buf = new CHAR[1024];
-        memset(operation->buffer.buf, 0, 1024);
-        operation->buffer.len = 1024;
-        operation->type = OperationType::recv;
-
-        DWORD flags = 0;
-        DWORD bytesdRecvd = 0;
-        result = WSARecv(client, &operation->buffer, 1, &bytesdRecvd, &flags, &operation->overlapped, NULL);
-        if (result != 0)
-        {
-            int error = WSAGetLastError();
-            if (error != WSA_IO_PENDING)
-            {
-                printf("[%s %d] WSARecv failed: %d\n", __func__, __LINE__, error);
-            }
-        }
+        Sleep(100);
     }
 
-    DWORD dwByteTrans;
+    DWORD dwByteTrans = 0;
     PostQueuedCompletionStatus(completionPort, dwByteTrans, NULL, NULL);
 
     return 0;

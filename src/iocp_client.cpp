@@ -4,6 +4,25 @@
 #include <string>
 #include "ScopeGuard/ScopeGuard.hpp"
 
+void logPrintf(const char* func, int line, const char* format, ...)
+{
+    char buffer[256];
+    memset(buffer, '\0', sizeof(buffer));
+
+    va_list ap;
+    va_start(ap, format);
+    vsprintf_s(buffer, sizeof(buffer), format, ap);
+    va_end(ap);
+
+    char out[512];
+    memset(out, '\0', sizeof(out));
+    sprintf_s(out, sizeof(out), "[%-*.*s:% 4d] %s\n", 15, 15, func, line, buffer);
+    printf("%s", out);
+}
+
+#define LOG(...) \
+    logPrintf(__func__, __LINE__, ##__VA_ARGS__)
+
 int main()
 {
     int err;
@@ -14,8 +33,7 @@ int main()
 
     if (err != 0)
     {
-        std::cout << "WSAStartup: " << err << std::endl;
-        printf("[%s %d] WSAStartup faild:\n", __func__, __LINE__);
+        LOG("WSAStartup faild");
         return 1;
     }
 
@@ -24,7 +42,7 @@ int main()
     SOCKET client = socket(AF_INET, SOCK_STREAM, 0);
     if (client == INVALID_SOCKET)
     {
-        printf("[%s %d] socket error: %d\n", __func__, __LINE__, WSAGetLastError());
+        LOG("socket error: %d", WSAGetLastError());
         return 1;
     }
 
@@ -39,7 +57,7 @@ int main()
 
     if (err == INVALID_SOCKET)
     {
-        printf("[%s %d] connect error: %d\n", __func__, __LINE__, WSAGetLastError());
+        LOG("connect error: %d", WSAGetLastError());
         return 1;
     }
 
@@ -48,14 +66,14 @@ int main()
     std::string str = "Data from client!";
 
     len = send(client, str.c_str(), static_cast<int>(str.size()), 0);
-    printf("[%s %d] send: %d\n", __func__, __LINE__, len);
+    LOG("send: %d", len);
     if (len == 0)
     {
         return 1;
     }
     else if (len == SOCKET_ERROR)
     {
-        printf("[%s %d] send error: %d\n", __func__, __LINE__, WSAGetLastError());
+        LOG("send error: %d", WSAGetLastError());
         return 1;
     }
 
@@ -69,11 +87,11 @@ int main()
     }
     else if (len == SOCKET_ERROR)
     {
-        printf("[%s %d] recv error: %d\n", __func__, __LINE__, WSAGetLastError());
+        LOG("recv error: %d", WSAGetLastError());
         return 1;
     }
 
-    printf("[%s %d] recv len: %d buf: %s\n", __func__, __LINE__, len, recvData);
+    LOG("recv len: %d buf: %s", len, recvData);
 
     return 0;
 }
