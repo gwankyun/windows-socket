@@ -3,25 +3,7 @@
 #include <iostream>
 #include <string>
 #include "ScopeGuard/ScopeGuard.hpp"
-
-void logPrintf(const char* func, int line, const char* format, ...)
-{
-    char buffer[256];
-    memset(buffer, '\0', sizeof(buffer));
-
-    va_list ap;
-    va_start(ap, format);
-    vsprintf_s(buffer, sizeof(buffer), format, ap);
-    va_end(ap);
-
-    char out[512];
-    memset(out, '\0', sizeof(out));
-    sprintf_s(out, sizeof(out), "[%-*.*s:% 4d] %s\n", 15, 15, func, line, buffer);
-    printf("%s", out);
-}
-
-#define LOG(...) \
-    logPrintf(__func__, __LINE__, ##__VA_ARGS__)
+#include "log.hpp"
 
 int main()
 {

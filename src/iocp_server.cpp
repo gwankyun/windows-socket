@@ -8,32 +8,9 @@
 #include <functional>
 #include <cassert>
 #include "ScopeGuard/ScopeGuard.hpp"
+#include "log.hpp"
 
 LPFN_ACCEPTEX acceptEx;
-
-void logPrintf(const char* func, int line, int funcLen, const char* format, ...)
-{
-    char buffer[256];
-    memset(buffer, '\0', sizeof(buffer));
-
-    va_list ap;
-    va_start(ap, format);
-    vsprintf_s(buffer, sizeof(buffer), format, ap);
-    va_end(ap);
-
-    char out[512];
-    memset(out, '\0', sizeof(out));
-    sprintf_s(out, sizeof(out), "[%-*.*s:% 4d] %s\n", funcLen, funcLen, func, line, buffer);
-    printf("%s", out);
-}
-
-void logPrintf(const char* func, int line, int funcLen)
-{
-    logPrintf(func, line, funcLen, "%s", "");
-}
-
-#define LOG(...) \
-    logPrintf(__func__, __LINE__, 15, ##__VA_ARGS__)
 
 enum class OperationType : uint8_t
 {
@@ -163,6 +140,7 @@ DWORD WINAPI process(LPVOID lpParam)
             SOCKET server = completionKey->socket;
             SOCKET client = operation->socket;
             LOG("client: %d", client);
+            //delete operation;
             //Operation* recvOperation = new Operation();
             Operation* recvOperation = operation;
             delete[] recvOperation->buffer.buf;
@@ -325,46 +303,6 @@ int main()
         LOG("WSAIoctl error: %d", WSAGetLastError());
         return 1;
     }
-
-    //while (true)
-    //{
-    //    SOCKET client = INVALID_SOCKET;
-    //    client = WSAAccept(server, NULL, NULL, NULL, 0);
-    //    if (client == INVALID_SOCKET)
-    //    {
-    //        LOG("WSAAccept error: %d", WSAGetLastError());
-    //        continue;
-    //    }
-    //    LOG("WSAAccept client: %d", client);
-
-    //    CompletionKey* completionKey = new CompletionKey();
-    //    completionKey->socket = client;
-    //    HANDLE handle = CreateIoCompletionPort((HANDLE)client, completionPort, (ULONG_PTR)completionKey, 0);
-    //    if (handle == NULL)
-    //    {
-    //        LOG("CreateIoCompletionPort failed");
-    //        delete completionKey;
-    //        completionKey = NULL;
-    //    }
-
-    //    Operation* operation = new Operation();
-    //    operation->buffer.buf = new CHAR[1024];
-    //    memset(operation->buffer.buf, 0, 1024);
-    //    operation->buffer.len = 1024;
-    //    operation->type = OperationType::recv;
-
-    //    DWORD flags = 0;
-    //    DWORD bytesdRecvd = 0;
-    //    result = WSARecv(client, &operation->buffer, 1, &bytesdRecvd, &flags, &operation->overlapped, NULL);
-    //    if (result != 0)
-    //    {
-    //        int error = WSAGetLastError();
-    //        if (error != WSA_IO_PENDING)
-    //        {
-    //            LOG("WSARecv error: %d", error);
-    //        }
-    //    }
-    //}
 
     CompletionKey* completionKey = new CompletionKey();
     completionKey->socket = server;
