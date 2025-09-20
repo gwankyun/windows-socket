@@ -1,75 +1,73 @@
-﻿#define _WINSOCK_DEPRECATED_NO_WARNINGS
-#include <WinSock2.h>
-#include <iostream>
-#include <string>
-#include "ScopeGuard/ScopeGuard.hpp"
+﻿#include <boost/scope/defer.hpp >
+#include <spdlog/spdlog.h>
+
+import std.compat;
+import socket.util;
 
 int main()
 {
-    int err;
-    WORD wVersionRequested = MAKEWORD(2, 2);
-    WSADATA lpWSAData;
+    spdlog::set_pattern("[%C-%m-%d %T.%e] [%^%L%$] [t:%6t] [%-8!!:%4#] %v");
 
-    err = WSAStartup(wVersionRequested, &lpWSAData);
+    int err = util::init();
 
     if (err != 0)
     {
-        std::cout << "WSAStartup: " << err << std::endl;
+        SPDLOG_ERROR("WSAStartup: {}", err);
         return 1;
     }
 
-    ON_SCOPE_EXIT(WSACleanup);
-
-    SOCKET client = socket(AF_INET, SOCK_STREAM, 0);
-    if (client == INVALID_SOCKET)
+    BOOST_SCOPE_DEFER[]
     {
-        std::cout << "socket: " << WSAGetLastError() << std::endl;
-        return 1;
-    }
+        util::deinit();
+    };
 
-    ON_SCOPE_EXIT(closesocket, client);
-
-    SOCKADDR_IN addr;
-    addr.sin_family = AF_INET;
-    addr.sin_addr.s_addr = inet_addr("127.0.0.1");
-    addr.sin_port = htons(12345);
-
-    err = connect(client, reinterpret_cast<SOCKADDR*>(&addr), sizeof(SOCKADDR));
-
-    if (err == INVALID_SOCKET)
+    util::socket_t client = util::make_socket(util::af::inet, util::sock::stream, 0);
+    if (client == util::invalid_socket)
     {
-        std::cout << "connect: " << WSAGetLastError() << std::endl;
+        SPDLOG_ERROR("socket: {}", util::last_error());
         return 1;
     }
 
-    char recvData[1024];
-    memset(recvData, '\0', sizeof(recvData));
+    BOOST_SCOPE_DEFER[&]
+    {
+        util::close(client);
+    };
 
-    int len;
+    util::address addr = util::make_address(util::af::inet, 12345, "127.0.0.1");
 
-    len = recv(client, recvData, sizeof(recvData), 0);
+    if (!util::connect(client, addr))
+    {
+        SPDLOG_ERROR("connect: {}", util::last_error());
+        return 1;
+    }
+
+    std::vector<char> recvData(1024, '\0');
+
+    int len = 0;
+
+    len = util::recv(client, recvData.data(), recvData.size(), 0);
     if (len == 0)
     {
         return 1;
     }
-    else if (len == SOCKET_ERROR)
+    else if (len == util::socket_error)
     {
-        std::cout << "recv: " << WSAGetLastError() << std::endl;
+        SPDLOG_ERROR("recv: {}", util::last_error());
         return 1;
     }
 
-    std::cout << "recv: " << recvData << std::endl;
+    SPDLOG_INFO("recv: {}", recvData.data());
 
     std::string str = "Data from client!";
 
-    len = send(client, str.c_str(), static_cast<int>(str.size()), 0);
+    len = util::send(client, str.c_str(), str.size(), 0);
     if (len == 0)
     {
         return 1;
     }
-    else if (len == SOCKET_ERROR)
+    else if (len == util::socket_error)
     {
-        std::cout << "send: " << WSAGetLastError() << std::endl;
+        SPDLOG_ERROR("send: {}", util::last_error());
         return 1;
     }
 

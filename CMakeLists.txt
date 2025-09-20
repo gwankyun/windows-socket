@@ -1,49 +1,53 @@
 ﻿# cmake最低版本
-cmake_minimum_required(VERSION 3.17)
-
-# 啟用IDE目錄功能
-set_property(GLOBAL PROPERTY USE_FOLDERS ON)
+cmake_minimum_required(VERSION 4.1)
 
 # 包含模塊
 include(CMakePrintHelpers)
 
-# 輸出目錄
-set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/bin)
-
 # 項目名
-project(WindowsSocket)
+project(windows_socket)
 
-# 設置編譯選項
-add_compile_options(
-    "$<$<CXX_COMPILER_ID:MSVC>:/W4;/MP>"
-    "$<$<AND:$<CONFIG:Debug>,$<CXX_COMPILER_ID:MSVC>>:/Od;/Ob0>"
-    "$<$<AND:$<CONFIG:Release>,$<CXX_COMPILER_ID:MSVC>>:/O2;/Ob2>"
+find_package(spdlog REQUIRED)
+find_package(boost_config REQUIRED)
+
+add_library(socket_util)
+target_sources(socket_util
+  PUBLIC
+    FILE_SET cxx_modules TYPE CXX_MODULES
+    BASE_DIRS ${CMAKE_CURRENT_SOURCE_DIR}/src # 模塊根目錄
+    FILES src/socket_util.ixx                 # 模塊接口單元
+  PRIVATE
+    src/socket_util.cpp                       # 模塊實現單元
+)
+target_compile_features(socket_util PRIVATE cxx_std_23)
+
+add_library(socket_comm INTERFACE)
+target_link_libraries(socket_comm
+  INTERFACE
+    "$<$<CXX_COMPILER_ID:MSVC>:ws2_32>"
+    spdlog::spdlog
+    Boost::config
+    socket_util
+)
+target_compile_features(socket_comm INTERFACE cxx_std_23)
+
+# 服務端
+add_executable(server)
+target_sources(server
+  PRIVATE
+    src/server.cpp
+)
+target_link_libraries(server
+  PRIVATE
+    socket_comm
 )
 
-# 執行文件
-add_executable(server "")
-add_executable(client "")
-add_executable(iocp_server "")
-add_executable(iocp_client "")
-
-# 引用目錄
-target_include_directories(server PRIVATE include)
-target_include_directories(client PRIVATE include)
-target_include_directories(iocp_server PRIVATE include)
-target_include_directories(iocp_client PRIVATE include)
-
-# 引用庫
-target_link_libraries(server PRIVATE
-    "$<$<CXX_COMPILER_ID:MSVC>:ws2_32>")
-target_link_libraries(client PRIVATE
-    "$<$<CXX_COMPILER_ID:MSVC>:ws2_32>")
-target_link_libraries(iocp_server PRIVATE
-    "$<$<CXX_COMPILER_ID:MSVC>:ws2_32>;mswsock")
-target_link_libraries(iocp_client PRIVATE
-    "$<$<CXX_COMPILER_ID:MSVC>:ws2_32>")
-
-# 添加源碼
-target_sources(server PRIVATE src/server.cpp)
-target_sources(client PRIVATE src/client.cpp)
-target_sources(iocp_server PRIVATE src/iocp_server.cpp)
-target_sources(iocp_client PRIVATE src/iocp_client.cpp)
+## 客戶端
+add_executable(client)
+target_sources(client
+  PRIVATE src/client.cpp
+)
+target_link_libraries(client
+  PRIVATE
+    socket_comm
+)
