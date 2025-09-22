@@ -43,9 +43,7 @@ int main()
 
     std::vector<char> recvData(1024, '\0');
 
-    int len = 0;
-
-    len = util::recv(client, recvData.data(), recvData.size(), 0);
+    int len = util::recv(client, recvData.data(), recvData.size(), 0);
     if (len == 0)
     {
         return 1;

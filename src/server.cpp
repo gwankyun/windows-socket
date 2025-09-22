@@ -47,8 +47,6 @@ int main()
         return 1;
     }
 
-    int len;
-
     while (true)
     {
         util::address addrClient;
@@ -71,7 +69,7 @@ int main()
         };
 
         std::string str = "Data from server!";
-        len = util::send(client, str.c_str(), str.size(), 0);
+        int len = util::send(client, str.c_str(), str.size(), 0);
         if (len == 0)
         {
             return 1;

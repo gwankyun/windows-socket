@@ -17,9 +17,21 @@ target_sources(socket_util
     BASE_DIRS ${CMAKE_CURRENT_SOURCE_DIR}/src # 模塊根目錄
     FILES src/socket_util.ixx                 # 模塊接口單元
   PRIVATE
+    src/socket_util_decl.h
+    src/socket_util_impl.hpp
     src/socket_util.cpp                       # 模塊實現單元
 )
 target_compile_features(socket_util PRIVATE cxx_std_23)
+
+add_library(socket_util_lib)
+target_sources(socket_util_lib
+  PUBLIC
+    src/socket_util.h
+    src/socket_util_decl.h
+    src/socket_util_impl.hpp
+  PRIVATE
+    src/socket_util_lib.cpp
+)
 
 add_library(socket_comm INTERFACE)
 target_link_libraries(socket_comm
