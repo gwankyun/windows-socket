@@ -1,6 +1,5 @@
 module;
-#define _WINSOCK_DEPRECATED_NO_WARNINGS
-#include <WinSock2.h>
+#include "socket_util_inc.h"
 
 module socket.util;
 

@@ -1,10 +1,11 @@
 #pragma once
 
-#define HAS_CSTDINT 1
+#ifndef HAS_CSTDINT
+#  define HAS_CSTDINT 1
+#endif // !HAS_CSTDINT
 
 #ifndef SOCKET_UTIL_MODULE
-#  define _WINSOCK_DEPRECATED_NO_WARNINGS
-#  include <WinSock2.h>
+#  include "socket_util_inc.h"
 
 #  if HAS_CSTDINT
 #    include <cstdint>
