@@ -21,8 +21,9 @@ target_compile_features(socket_util PRIVATE cxx_std_23)
 add_library(socket_util_lib)
 target_sources(socket_util_lib
   PUBLIC
-    src/socket_util.h
+    socket_util.h
   PRIVATE
+    src/socket_util_inner.h
     src/socket_util_lib.cpp
 )
 target_link_libraries(socket_util_lib PRIVATE socket_util_common)

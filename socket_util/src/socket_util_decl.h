@@ -16,9 +16,13 @@
 namespace util
 {
 #if HAS_CSTDINT
+    typedef std::uint8_t uint8_t;
     typedef std::uint16_t uint16_t;
+    typedef std::uint32_t uint32_t;
 #else
+    typedef unsigned __int8 uint8_t;
     typedef unsigned __int16 uint16_t;
+    typedef unsigned __int32 uint32_t;
 #endif
 
     struct af
@@ -75,7 +79,11 @@ namespace util
 
     char* inet_ntoa(in_addr _in);
 
-    int send(socket_t _s, const char* _data, std::size_t _len, int _flags);
+    int send(socket_t _s, const char* _data, std::size_t _len, int _flags = 0);
 
-    int recv(socket_t _s, char* _data, std::size_t _len, int _flags);
+    int recv(socket_t _s, char* _data, std::size_t _len, int _flags = 0);
+
+    uint16_t ntohs(uint16_t _ns);
+    uint32_t ntohl(uint32_t _nl);
+    uint32_t htonl(uint32_t _hl);
 } // namespace util

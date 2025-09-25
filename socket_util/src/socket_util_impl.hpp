@@ -1,7 +1,7 @@
 #pragma once
 
 #ifndef SOCKET_UTIL_MODULE
-#  include "socket_util.h"
+#  include "socket_util_inner.h"
 #endif // !SOCKET_UTIL_MODULE
 
 namespace util
@@ -91,5 +91,20 @@ namespace util
     int recv(socket_t _s, char* _data, std::size_t _len, int _flags)
     {
         return ::recv(_s, _data, static_cast<int>(_len), _flags);
+    }
+
+    uint16_t ntohs(uint16_t _ns)
+    {
+        return ::ntohs(_ns);
+    }
+
+    uint32_t ntohl(uint32_t _nl)
+    {
+        return ::ntohl(_nl);
+    }
+
+    uint32_t htonl(uint32_t _hl)
+    {
+        return ::htonl(_hl);
     }
 } // namespace util
