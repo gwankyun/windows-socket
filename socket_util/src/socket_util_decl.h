@@ -13,7 +13,15 @@
 #  include <string>
 #endif // !SOCKET_UTIL_MODULE
 
-namespace util
+#ifndef SOCKET_UTIL_MODULE_EXPORT
+#  ifdef SOCKET_UTIL_MODULE
+#    define SOCKET_UTIL_MODULE_EXPORT export
+#  else
+#    define SOCKET_UTIL_MODULE_EXPORT
+#  endif // SOCKET_UTIL_MODULE
+#endif   // !SOCKET_UTIL_MODULE_EXPORT
+
+SOCKET_UTIL_MODULE_EXPORT namespace util
 {
 #if HAS_CSTDINT
     typedef std::uint8_t uint8_t;
@@ -85,5 +93,6 @@ namespace util
 
     uint16_t ntohs(uint16_t _ns);
     uint32_t ntohl(uint32_t _nl);
+    uint16_t htons(uint16_t _hs);
     uint32_t htonl(uint32_t _hl);
 } // namespace util

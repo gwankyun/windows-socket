@@ -103,6 +103,11 @@ namespace util
         return ::ntohl(_nl);
     }
 
+    uint16_t htons(uint16_t _hs)
+    {
+        return ::htons(_hs);
+    }
+
     uint32_t htonl(uint32_t _hl)
     {
         return ::htonl(_hl);

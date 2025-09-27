@@ -6,7 +6,4 @@ module;
 export module socket.util;
 import std;
 
-export
-{
 #include "socket_util_decl.h"
-}
