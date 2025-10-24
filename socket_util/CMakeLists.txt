@@ -1,8 +1,11 @@
 ﻿add_library(socket_util_common INTERFACE)
 target_sources(socket_util_common
   INTERFACE
+    socket_util.hpp
+    src/macro.h
     src/socket_util_inc.h    # 引入頭文件
     src/socket_util_decl.h   # 聲明
+    src/socket_util_base.hpp
     src/socket_util_impl.hpp # 實現
 )
 
@@ -14,6 +17,10 @@ target_sources(socket_util
     FILES src/socket_util.ixx                 # 模塊接口單元
   PRIVATE
     src/socket_util_module.cpp                # 模塊實現單元
+)
+target_compile_definitions(socket_util
+  PRIVATE
+    SOCKET_UTIL_MODULE
 )
 target_link_libraries(socket_util PRIVATE socket_util_common)
 target_compile_features(socket_util PRIVATE cxx_std_23)

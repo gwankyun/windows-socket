@@ -1,0 +1,17 @@
+#pragma once
+
+#ifndef SOCKET_UTIL_MODULE_EXPORT
+#  ifdef SOCKET_UTIL_MODULE
+#    define SOCKET_UTIL_MODULE_EXPORT export
+#  else
+#    define SOCKET_UTIL_MODULE_EXPORT
+#  endif // SOCKET_UTIL_MODULE
+#endif   // !SOCKET_UTIL_MODULE_EXPORT
+
+#ifndef SOCKET_UTIL_INLINE
+#  ifdef SOCKET_UTIL_HEADER_ONLY
+#    define SOCKET_UTIL_INLINE inline
+#  else
+#    define SOCKET_UTIL_INLINE
+#  endif // SOCKET_UTIL_HEADER_ONLY
+#endif   // !SOCKET_UTIL_INLINE

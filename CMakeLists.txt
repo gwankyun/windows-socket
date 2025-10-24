@@ -10,6 +10,8 @@ project(windows_socket)
 find_package(spdlog REQUIRED)
 find_package(boost_config REQUIRED)
 
+# add_compile_options($<$<CXX_COMPILER_ID:MSVC>:/Od>)
+
 add_subdirectory(socket_util)
 
 add_library(socket_comm INTERFACE)
@@ -31,14 +33,39 @@ target_sources(server
 target_link_libraries(server
   PRIVATE
     socket_comm
+    socket_util
 )
 
 ## 客戶端
 add_executable(client)
 target_sources(client
-  PRIVATE src/client.cpp
+  PRIVATE
+    src/client_decl.hpp
+    src/client_impl.hpp
+    src/client.cpp
 )
 target_link_libraries(client
+  PRIVATE
+    socket_comm
+    socket_util
+)
+
+add_executable(client_header)
+target_sources(client_header
+  PRIVATE
+    src/client_decl.hpp
+    src/client_impl.hpp
+    src/client_header.cpp
+)
+target_include_directories(client_header
+  PRIVATE
+    ${PROJECT_SOURCE_DIR}
+)
+target_compile_definitions(client_header
+  PRIVATE
+    SOCKET_UTIL_HEADER_ONLY
+)
+target_link_libraries(client_header
   PRIVATE
     socket_comm
 )
