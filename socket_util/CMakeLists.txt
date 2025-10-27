@@ -3,10 +3,16 @@ target_sources(socket_util_common
   INTERFACE
     socket_util.hpp
     src/macro.h
-    src/socket_util_inc.h    # 引入頭文件
-    src/socket_util_decl.h   # 聲明
-    src/socket_util_base.hpp
-    src/socket_util_impl.hpp # 實現
+    # 引入頭文件
+    src/socket_util_inc.h
+    # 聲明
+    src/socket_util_decl.h
+    # 聲明及實現
+    src/socket_util_base_impl.hpp
+    src/winapi_impl.hpp
+    # 實現
+    src/socket_util_impl.hpp
+    src/cstdint_impl.hpp
 )
 
 add_library(socket_util)
@@ -14,7 +20,11 @@ target_sources(socket_util
   PUBLIC
     FILE_SET cxx_modules TYPE CXX_MODULES
     BASE_DIRS ${CMAKE_CURRENT_SOURCE_DIR}/src # 模塊根目錄
-    FILES src/socket_util.ixx                 # 模塊接口單元
+    FILES                                     # 模塊接口單元
+      src/socket.util.base.ixx
+      src/socket.util.ixx
+      src/winapi.ixx
+      src/cstdint.ixx
   PRIVATE
     src/socket_util_module.cpp                # 模塊實現單元
 )
@@ -30,7 +40,6 @@ target_sources(socket_util_lib
   PUBLIC
     socket_util.h
   PRIVATE
-    src/socket_util_inner.h
     src/socket_util_lib.cpp
 )
 target_link_libraries(socket_util_lib PRIVATE socket_util_common)

@@ -1,6 +1,12 @@
 #pragma once
 
-#include "socket_util_base.hpp"
+#include "macro.h"
+
+#ifdef SOCKET_UTIL_MODULE
+export import socket.util.base;
+#else
+#  include "socket_util_base_impl.hpp"
+#endif // SOCKET_UTIL_MODULE
 
 SOCKET_UTIL_MODULE_EXPORT namespace util
 {
