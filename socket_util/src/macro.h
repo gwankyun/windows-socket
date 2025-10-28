@@ -23,3 +23,15 @@
 #    define SOCKET_UTIL_MODULE_INLINE_VARIABLE static
 #  endif // SOCKET_UTIL_MODULE
 #endif   // !SOCKET_UTIL_MODULE_INLINE_VARIABLE
+
+#ifndef SOCKET_UTIL_CXX
+#  ifdef _MSC_VER
+#    define SOCKET_UTIL_CXX _MSVC_LANG
+#  else
+#    define SOCKET_UTIL_CXX __cplusplus
+#  endif
+#endif // !SOCKET_UTIL_CXX
+
+#ifndef SOCKET_UTIL_CXX_11
+#  define SOCKET_UTIL_CXX_11 201103L
+#endif // !SOCKET_UTIL_CXX_11

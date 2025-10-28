@@ -133,4 +133,12 @@ namespace util
     {
         return winapi::htonl(_hl);
     }
+
+    SOCKET_UTIL_INLINE bool set_nonblocking(socket_t _sock, bool _nonblocking)
+    {
+        using winapi::macro;
+        winapi::u_long mode = _nonblocking ? 1 : 0;
+        int result = winapi::ioctlsocket(_sock, macro::fionbio, &mode);
+        return result == macro::no_error;
+    }
 } // namespace util

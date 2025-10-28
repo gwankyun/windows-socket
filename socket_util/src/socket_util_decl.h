@@ -40,4 +40,6 @@ SOCKET_UTIL_MODULE_EXPORT namespace util
     uint32_t ntohl(uint32_t _nl);
     uint16_t htons(uint16_t _hs);
     uint32_t htonl(uint32_t _hl);
+
+    bool set_nonblocking(socket_t _sock, bool _nonblocking);
 } // namespace util

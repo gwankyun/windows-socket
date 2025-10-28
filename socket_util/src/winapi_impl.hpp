@@ -20,6 +20,7 @@ SOCKET_UTIL_MODULE_EXPORT namespace winapi
     using ::htons;
     using ::inet_addr;
     using ::inet_ntoa;
+    using ::ioctlsocket;
     using ::listen;
     using ::ntohl;
     using ::ntohs;
@@ -30,17 +31,37 @@ SOCKET_UTIL_MODULE_EXPORT namespace winapi
     using ::WSAGetLastError;
     using ::WSAStartup;
 
-    using ::WORD;
-    using ::WSADATA;
+    using ::fd_set;
+    using ::in_addr;
     using ::SOCKADDR;
     using ::SOCKADDR_IN;
-    using ::in_addr;
     using ::SOCKET;
+    using ::u_long;
+    using ::WORD;
+    using ::WSADATA;
 
     SOCKET_UTIL_INLINE WORD make_word(unsigned char _a, unsigned char _b)
     {
         return MAKEWORD(_a, _b);
     }
+
+    namespace fd
+    {
+        SOCKET_UTIL_INLINE void zero(fd_set& _set)
+        {
+            FD_ZERO(&_set);
+        }
+
+        SOCKET_UTIL_INLINE void set(SOCKET _socket, fd_set& _set)
+        {
+            FD_SET(_socket, &_set);
+        }
+
+        SOCKET_UTIL_INLINE bool isset(SOCKET _socket, fd_set& _set)
+        {
+            return FD_ISSET(_socket, &_set);
+        }
+    } // namespace fd
 
     struct macro
     {
@@ -49,5 +70,8 @@ SOCKET_UTIL_MODULE_EXPORT namespace winapi
         static const int sock_stream = SOCK_STREAM;
         static const int invalid_socket = INVALID_SOCKET;
         static const int socket_error = SOCKET_ERROR;
+        static const int fionbio = FIONBIO;
+        static const int no_error = NO_ERROR;
+        static const int wsa_ewouldblock = WSAEWOULDBLOCK;
     };
 }
