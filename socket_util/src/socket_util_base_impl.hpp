@@ -45,4 +45,17 @@ SOCKET_UTIL_MODULE_EXPORT namespace util
     typedef winapi::SOCKET socket_t;
 
     typedef winapi::SOCKADDR_IN address;
+
+    struct select_status
+    {
+        enum type
+        {
+            success = 0,
+            timeout,
+            socket_error,
+            select_error,
+            unknown_error
+        };
+    };
+    typedef select_status::type select_status_type;
 } // namespace util

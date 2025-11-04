@@ -30,6 +30,9 @@ SOCKET_UTIL_MODULE_EXPORT namespace winapi
     using ::WSACleanup;
     using ::WSAGetLastError;
     using ::WSAStartup;
+    using ::select;
+    using ::getsockopt;
+    using ::WSASetLastError;
 
     using ::fd_set;
     using ::in_addr;
@@ -39,6 +42,7 @@ SOCKET_UTIL_MODULE_EXPORT namespace winapi
     using ::u_long;
     using ::WORD;
     using ::WSADATA;
+    using ::timeval;
 
     SOCKET_UTIL_INLINE WORD make_word(unsigned char _a, unsigned char _b)
     {
@@ -47,17 +51,19 @@ SOCKET_UTIL_MODULE_EXPORT namespace winapi
 
     namespace fd
     {
-        SOCKET_UTIL_INLINE void zero(fd_set& _set)
+        typedef fd_set type;
+
+        SOCKET_UTIL_INLINE void zero(type& _set)
         {
             FD_ZERO(&_set);
         }
 
-        SOCKET_UTIL_INLINE void set(SOCKET _socket, fd_set& _set)
+        SOCKET_UTIL_INLINE void set(SOCKET _socket, type& _set)
         {
             FD_SET(_socket, &_set);
         }
 
-        SOCKET_UTIL_INLINE bool isset(SOCKET _socket, fd_set& _set)
+        SOCKET_UTIL_INLINE bool isset(SOCKET _socket, type& _set)
         {
             return FD_ISSET(_socket, &_set);
         }
@@ -73,5 +79,7 @@ SOCKET_UTIL_MODULE_EXPORT namespace winapi
         static const int fionbio = FIONBIO;
         static const int no_error = NO_ERROR;
         static const int wsa_ewouldblock = WSAEWOULDBLOCK;
+        static const int sol_socket = SOL_SOCKET;
+        static const int so_error = SO_ERROR;
     };
 }

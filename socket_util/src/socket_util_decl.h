@@ -4,8 +4,10 @@
 
 #ifdef SOCKET_UTIL_MODULE
 export import socket.util.base;
+export import winapi;
 #else
 #  include "socket_util_base_impl.hpp"
+#  include "winapi_impl.hpp"
 #endif // SOCKET_UTIL_MODULE
 
 SOCKET_UTIL_MODULE_EXPORT namespace util
@@ -28,9 +30,12 @@ SOCKET_UTIL_MODULE_EXPORT namespace util
 
     bool connect(socket_t _client, address & _addrServer);
 
+    int connect_with_select(socket_t _sock, address & _addr,
+                            winapi::timeval& _timeout);
+
     int last_error();
 
-    char* inet_ntoa(in_addr _in);
+    char* inet_ntoa(winapi::in_addr _in);
 
     int send(socket_t _s, const char* _data, std::size_t _len, int _flags = 0);
 

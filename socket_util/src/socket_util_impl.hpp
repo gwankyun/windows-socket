@@ -1,10 +1,11 @@
-#pragma once
+﻿#pragma once
 
 #include "macro.h"
 
 #ifdef SOCKET_UTIL_MODULE
 import winapi;
 import socket.util.base;
+import std;
 #else
 #  include "socket_util_base_impl.hpp"
 #  include "winapi_impl.hpp"
@@ -69,6 +70,82 @@ namespace util
         return err == 0;
     }
 
+    SOCKET_UTIL_INLINE int connect_with_select(socket_t _sock, address& _addr,
+                                               winapi::timeval& _timeout)
+    {
+        // 尝试连接
+        using winapi::SOCKADDR;
+        SOCKADDR* addr = reinterpret_cast<SOCKADDR*>(&_addr);
+        int result = winapi::connect(_sock, addr, sizeof(SOCKADDR));
+
+        // 如果立即成功，直接返回
+        if (result == 0)
+        {
+            return 0;
+        }
+
+        // 检查错误码是否为WSAEWOULDBLOCK，这是非阻塞模式下正在连接的正常返回
+        if (winapi::WSAGetLastError() != winapi::macro::wsa_ewouldblock)
+        {
+            return -1; // 连接发生其他错误
+        }
+
+        // 使用select等待连接完成
+        winapi::fd::type writeSet;
+        winapi::fd::type exceptSet;
+        winapi::fd::zero(writeSet);
+        winapi::fd::zero(exceptSet);
+        winapi::fd::set(_sock, writeSet);
+        winapi::fd::set(_sock, exceptSet);
+
+        // 等待套接字变为可写（连接完成）或发生异常
+        result = winapi::select(0, NULL, &writeSet, &exceptSet, &_timeout);
+
+        if (result == 0)
+        {
+            // 超时
+            return 1;
+        }
+        else if (result == winapi::macro::socket_error)
+        {
+            // select出错
+            return -1;
+        }
+        else
+        {
+            // 检查是否是异常情况
+            if (winapi::fd::isset(_sock, exceptSet))
+            {
+                return -1;
+            }
+
+            // 检查连接是否成功
+            if (winapi::fd::isset(_sock, writeSet))
+            {
+                // 连接完成，需要再次检查套接字错误状态
+                int error = 0;
+                int len = sizeof(error);
+                if (winapi::getsockopt(_sock, winapi::macro::sol_socket,
+                                       winapi::macro::so_error, (char*)&error,
+                                       &len) == winapi::macro::socket_error)
+                {
+                    return -1;
+                }
+
+                if (error != 0)
+                {
+                    winapi::WSASetLastError(error);
+                    return -1;
+                }
+
+                // 连接成功
+                return 0;
+            }
+        }
+
+        return -1;
+    }
+
     SOCKET_UTIL_INLINE bool listen(socket_t& _socket, int _backlog)
     {
         return winapi::listen(_socket, _backlog) == 0;
@@ -106,6 +183,76 @@ namespace util
                                 std::size_t _len, int _flags)
     {
         return winapi::send(_s, _data, static_cast<int>(_len), _flags);
+    }
+
+    SOCKET_UTIL_INLINE select_status_type
+    writable_with_select(socket_t sock, winapi::timeval& timeout)
+    {
+        winapi::fd::type writeSet;
+        winapi::fd::type exceptSet;
+        winapi::fd::zero(writeSet);
+        winapi::fd::zero(exceptSet);
+        winapi::fd::set(sock, writeSet);
+        winapi::fd::set(sock, exceptSet);
+
+        int result = winapi::select(0, NULL, &writeSet, &exceptSet, &timeout);
+
+        if (result > 0)
+        {
+            if (winapi::fd::isset(sock, writeSet))
+            {
+                return select_status::success; // 可以发送数据
+            }
+            else if (winapi::fd::isset(sock, exceptSet))
+            {
+                return select_status::socket_error;
+            }
+        }
+        else if (result == 0)
+        {
+            return select_status::timeout;
+        }
+        else
+        {
+            return select_status::select_error;
+        }
+
+        return select_status::unknown_error;
+    }
+
+    SOCKET_UTIL_INLINE select_status_type
+    readable_with_select(socket_t sock, winapi::timeval& timeout)
+    {
+        winapi::fd::type readSet;
+        winapi::fd::type exceptSet;
+        winapi::fd::zero(readSet);
+        winapi::fd::zero(exceptSet);
+        winapi::fd::set(sock, readSet);
+        winapi::fd::set(sock, exceptSet);
+
+        int result = winapi::select(0, &readSet, NULL, &exceptSet, &timeout);
+
+        if (result > 0)
+        {
+            if (winapi::fd::isset(sock, readSet))
+            {
+                return select_status::success; // 可以发送数据
+            }
+            else if (winapi::fd::isset(sock, exceptSet))
+            {
+                return select_status::socket_error;
+            }
+        }
+        else if (result == 0)
+        {
+            return select_status::timeout;
+        }
+        else
+        {
+            return select_status::select_error;
+        }
+
+        return select_status::unknown_error;
     }
 
     SOCKET_UTIL_INLINE int recv(socket_t _s, char* _data, std::size_t _len,

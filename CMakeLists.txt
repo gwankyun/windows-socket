@@ -10,7 +10,8 @@ project(windows_socket)
 find_package(spdlog REQUIRED)
 find_package(boost_config REQUIRED)
 
-# add_compile_options($<$<CXX_COMPILER_ID:MSVC>:/Od>)
+# MSVC下以UTF-8格式編譯
+add_compile_options($<$<CXX_COMPILER_ID:MSVC>:/utf-8>)
 
 add_subdirectory(socket_util)
 

@@ -1,18 +1,22 @@
 ﻿add_library(socket_util_common INTERFACE)
 target_sources(socket_util_common
   INTERFACE
-    socket_util.hpp
-    src/macro.h
-    # 引入頭文件
-    src/socket_util_inc.h
-    # 聲明
-    src/socket_util_decl.h
-    # 聲明及實現
-    src/socket_util_base_impl.hpp
-    src/winapi_impl.hpp
-    # 實現
-    src/socket_util_impl.hpp
-    src/cstdint_impl.hpp
+  #[[
+    FILE_SET HEADERS
+    FILES
+  #]]
+      socket_util.hpp
+      src/macro.h
+      # 引入頭文件
+      src/socket_util_inc.h
+      # 聲明
+      src/socket_util_decl.h
+      # 聲明及實現
+      src/socket_util_base_impl.hpp
+      src/winapi_impl.hpp
+      # 實現
+      src/socket_util_impl.hpp
+      src/cstdint_impl.hpp
 )
 
 add_library(socket_util)
@@ -38,7 +42,9 @@ target_compile_features(socket_util PRIVATE cxx_std_23)
 add_library(socket_util_lib)
 target_sources(socket_util_lib
   PUBLIC
-    socket_util.h
+    FILE_SET HEADERS
+    FILES
+      socket_util.h
   PRIVATE
     src/socket_util_lib.cpp
 )

@@ -42,11 +42,43 @@ int main()
 
     util::address addr = util::make_address(util::af::inet, 12345, "127.0.0.1");
 
-    if (!util::connect(client, addr))
+    if (false)
     {
-        SPDLOG_ERROR("connect: {}", util::last_error());
-        return 1;
+        if (!util::connect(client, addr))
+        {
+            SPDLOG_ERROR("connect: {}", util::last_error());
+            return 1;
+        }
     }
+    else
+    {
+        if (!util::set_nonblocking(client, true))
+        {
+            SPDLOG_ERROR("connect: {}", util::last_error());
+            return 1;
+        }
+        winapi::timeval tv;
+        tv.tv_sec = 1;
+        tv.tv_usec = 0;
+        SPDLOG_INFO("connect begin");
+        int result = util::connect_with_select(client, addr, tv);
+        SPDLOG_INFO("connect end");
+        if (result == 0)
+        {
+            SPDLOG_INFO("connect success");
+        }
+        else if (result == -1)
+        {
+            SPDLOG_ERROR("connect: {}", util::last_error());
+            return 1;
+        }
+        else if (result == 1)
+        {
+            SPDLOG_ERROR("timeout");
+            return 1;
+        }
+    }
+    util::set_nonblocking(client, false);
 
     std::vector<char> recvData(1024, '\0');
 
