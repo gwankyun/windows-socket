@@ -4,6 +4,8 @@
 import std.compat;
 import socket.util;
 
+using namespace std::chrono_literals;
+
 int main()
 {
     spdlog::set_pattern("[%C-%m-%d %T.%e] [%^%L%$] [t:%6t] [%-8!!:%4#] %v");
@@ -21,7 +23,8 @@ int main()
         util::deinit();
     };
 
-    util::socket_t server = util::make_socket(util::af::inet, util::sock::stream, 0);
+    util::socket_t server =
+        util::make_socket(util::af::inet, util::sock::stream, 0);
     if (server == util::invalid_socket)
     {
         SPDLOG_ERROR("socket: {}", util::last_error());
@@ -59,8 +62,8 @@ int main()
         }
 
         std::vector<char> info(128, '\0');
-        sprintf_s(info.data(), info.size(), "ip: %s port: %d", util::inet_ntoa(addrClient.sin_addr),
-                  addrClient.sin_port);
+        sprintf_s(info.data(), info.size(), "ip: %s port: %d",
+                  util::inet_ntoa(addrClient.sin_addr), addrClient.sin_port);
         SPDLOG_INFO("info: {}", info.data());
 
         BOOST_SCOPE_DEFER[&]
@@ -68,7 +71,9 @@ int main()
             util::close(client);
         };
 
-        std::string str = "Data from server!";
+        std::this_thread::sleep_for(1s);
+
+        std::string str = "Data from server.";
         int len = util::send(client, str.c_str(), str.size(), 0);
         if (len == 0)
         {
@@ -81,6 +86,7 @@ int main()
         }
 
         std::vector<char> recvData(1024, '\0');
+        std::this_thread::sleep_for(1s);
 
         len = util::recv(client, recvData.data(), recvData.size(), 0);
         if (len == 0)
