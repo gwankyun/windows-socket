@@ -7,10 +7,22 @@
             "toolchainFile": "$env{VCPKG_ROOT}/scripts/buildsystems/vcpkg.cmake"
         },
         {
-            "name": "msvc",
+            "name": "msvc17",
             "inherits": "vcpkg",
             "generator": "Visual Studio 17 2022",
-            "binaryDir": "${sourceDir}/build/msvc"
+            "binaryDir": "${sourceDir}/build/msvc17",
+            "toolchainFile": "$env{VCPKG_ROOT_VS17}/scripts/buildsystems/vcpkg.cmake",
+            "architecture": "x64"
+        },
+        {
+            "name": "msvc",
+            "description": "Visual Studio 18 2026",
+            "binaryDir": "${sourceDir}/build/msvc",
+            "generator": "Visual Studio 18 2026",
+            "toolchainFile": "$env{VCPKG_ROOT_VS17}/scripts/buildsystems/vcpkg.cmake",
+            "architecture": "x64",
+            "toolset": "v143",
+            "$comment": "vcpkg尚未支持VS2026"
         }
     ],
     "buildPresets": [
