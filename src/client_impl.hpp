@@ -62,16 +62,15 @@ int main()
             return 1;
         }
 
-        BOOST_SCOPE_DEFER[&]
-        {
-            //util::set_nonblocking(client, false);
+        BOOST_SCOPE_DEFER[&]{
+            // util::set_nonblocking(client, false);
         };
 
-        winapi::timeval tv;
-        tv.tv_sec = 1;
-        tv.tv_usec = 0;
         SPDLOG_INFO("connect begin");
-        int result = util::connect_with_select(client, addr, tv);
+        util::select_config config;
+        config.timeval.tv_sec = 1;
+        config.timeval.tv_usec = 0;
+        int result = util::connect(client, addr, config);
         SPDLOG_INFO("connect end");
         if (result == 0)
         {
@@ -99,15 +98,15 @@ int main()
 
         if (use_async)
         {
-            winapi::timeval val;
-            val.tv_sec = 0;
-            val.tv_usec = 100;
+            util::select_config config;
+            config.timeval.tv_sec = 0;
+            config.timeval.tv_usec = 100;
 
             auto flag = true;
 
             while (flag)
             {
-                auto result = util::readable_with_select(client, val);
+                auto result = util::readable(client, config);
                 switch (result)
                 {
                 case util::select_status::success:
@@ -134,7 +133,8 @@ int main()
             }
         }
 
-        int len = util::recv(client, recvData.data() + offset, recvData.size() - offset, 0);
+        int len = util::recv(client, recvData.data() + offset,
+                             recvData.size() - offset, 0);
         if (len == 0)
         {
             return 1;
@@ -152,7 +152,7 @@ int main()
             break;
         }
     }
-    //util::set_nonblocking(client, false);
+    // util::set_nonblocking(client, false);
 
     SPDLOG_INFO("recv: {}", recvData.data());
 
@@ -164,15 +164,15 @@ int main()
 
         if (use_async)
         {
-            winapi::timeval val;
-            val.tv_sec = 0;
-            val.tv_usec = 100;
+            util::select_config config;
+            config.timeval.tv_sec = 0;
+            config.timeval.tv_usec = 100;
 
             auto flag = true;
 
             while (flag)
             {
-                auto result = util::writable_with_select(client, val);
+                auto result = util::writable(client, config);
                 switch (result)
                 {
                 case util::select_status::success:

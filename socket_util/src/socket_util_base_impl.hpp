@@ -58,4 +58,12 @@ SOCKET_UTIL_MODULE_EXPORT namespace util
         };
     };
     typedef select_status::type select_status_type;
+
+    struct select_config
+    {
+        winapi::timeval timeval;
+        winapi::fd::type read;
+        winapi::fd::type write;
+        winapi::fd::type except;
+    };
 } // namespace util

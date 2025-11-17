@@ -30,8 +30,7 @@ SOCKET_UTIL_MODULE_EXPORT namespace util
 
     bool connect(socket_t _client, address & _addrServer);
 
-    int connect_with_select(socket_t _sock, address & _addr,
-                            winapi::timeval & _timeout);
+    int connect(socket_t _sock, address & _addr, select_config & _config);
 
     int last_error();
 
@@ -47,8 +46,6 @@ SOCKET_UTIL_MODULE_EXPORT namespace util
     uint32_t htonl(uint32_t _hl);
 
     bool set_nonblocking(socket_t _sock, bool _nonblocking);
-    select_status_type writable_with_select(socket_t sock,
-                                            winapi::timeval & timeout);
-    select_status_type readable_with_select(socket_t sock,
-                                            winapi::timeval & timeout);
+    select_status_type writable(socket_t sock, select_config & _config);
+    select_status_type readable(socket_t sock, select_config & _config);
 } // namespace util

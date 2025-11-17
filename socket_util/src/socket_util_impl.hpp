@@ -70,8 +70,8 @@ namespace util
         return err == 0;
     }
 
-    SOCKET_UTIL_INLINE int connect_with_select(socket_t _sock, address& _addr,
-                                               winapi::timeval& _timeout)
+    SOCKET_UTIL_INLINE int connect(socket_t _sock, address& _addr,
+                                   select_config& _config)
     {
         // 尝试连接
         using winapi::SOCKADDR;
@@ -91,15 +91,14 @@ namespace util
         }
 
         // 使用select等待连接完成
-        winapi::fd::type writeSet;
-        winapi::fd::type exceptSet;
-        winapi::fd::zero(writeSet);
-        winapi::fd::zero(exceptSet);
-        winapi::fd::set(_sock, writeSet);
-        winapi::fd::set(_sock, exceptSet);
+        winapi::fd::zero(_config.write);
+        winapi::fd::zero(_config.except);
+        winapi::fd::set(_sock, _config.write);
+        winapi::fd::set(_sock, _config.except);
 
         // 等待套接字变为可写（连接完成）或发生异常
-        result = winapi::select(0, NULL, &writeSet, &exceptSet, &_timeout);
+        result = winapi::select(0, NULL, &_config.write, &_config.except,
+                                &_config.timeval);
 
         if (result == 0)
         {
@@ -114,13 +113,13 @@ namespace util
         else
         {
             // 检查是否是异常情况
-            if (winapi::fd::isset(_sock, exceptSet))
+            if (winapi::fd::isset(_sock, _config.except))
             {
                 return -1;
             }
 
             // 检查连接是否成功
-            if (winapi::fd::isset(_sock, writeSet))
+            if (winapi::fd::isset(_sock, _config.write))
             {
                 // 连接完成，需要再次检查套接字错误状态
                 int error = 0;
@@ -185,25 +184,24 @@ namespace util
         return winapi::send(_s, _data, static_cast<int>(_len), _flags);
     }
 
-    SOCKET_UTIL_INLINE select_status_type
-    writable_with_select(socket_t sock, winapi::timeval& timeout)
+    SOCKET_UTIL_INLINE select_status_type writable(socket_t sock,
+                                                   select_config& _config)
     {
-        winapi::fd::type writeSet;
-        winapi::fd::type exceptSet;
-        winapi::fd::zero(writeSet);
-        winapi::fd::zero(exceptSet);
-        winapi::fd::set(sock, writeSet);
-        winapi::fd::set(sock, exceptSet);
+        winapi::fd::zero(_config.write);
+        winapi::fd::zero(_config.except);
+        winapi::fd::set(sock, _config.write);
+        winapi::fd::set(sock, _config.except);
 
-        int result = winapi::select(0, NULL, &writeSet, &exceptSet, &timeout);
+        int result = winapi::select(0, NULL, &_config.write, &_config.except,
+                                    &_config.timeval);
 
         if (result > 0)
         {
-            if (winapi::fd::isset(sock, writeSet))
+            if (winapi::fd::isset(sock, _config.write))
             {
                 return select_status::success; // 可以发送数据
             }
-            else if (winapi::fd::isset(sock, exceptSet))
+            else if (winapi::fd::isset(sock, _config.except))
             {
                 return select_status::socket_error;
             }
@@ -220,25 +218,24 @@ namespace util
         return select_status::unknown_error;
     }
 
-    SOCKET_UTIL_INLINE select_status_type
-    readable_with_select(socket_t sock, winapi::timeval& timeout)
+    SOCKET_UTIL_INLINE select_status_type readable(socket_t sock,
+                                                   select_config& _config)
     {
-        winapi::fd::type readSet;
-        winapi::fd::type exceptSet;
-        winapi::fd::zero(readSet);
-        winapi::fd::zero(exceptSet);
-        winapi::fd::set(sock, readSet);
-        winapi::fd::set(sock, exceptSet);
+        winapi::fd::zero(_config.read);
+        winapi::fd::zero(_config.except);
+        winapi::fd::set(sock, _config.read);
+        winapi::fd::set(sock, _config.except);
 
-        int result = winapi::select(0, &readSet, NULL, &exceptSet, &timeout);
+        int result = winapi::select(0, &_config.read, NULL, &_config.except,
+                                    &_config.timeval);
 
         if (result > 0)
         {
-            if (winapi::fd::isset(sock, readSet))
+            if (winapi::fd::isset(sock, _config.read))
             {
                 return select_status::success; // 可以发送数据
             }
-            else if (winapi::fd::isset(sock, exceptSet))
+            else if (winapi::fd::isset(sock, _config.except))
             {
                 return select_status::socket_error;
             }
