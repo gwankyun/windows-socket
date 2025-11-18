@@ -70,3 +70,9 @@ target_link_libraries(client_header
   PRIVATE
     socket_comm
 )
+
+set(custom "${CMAKE_SOURCE_DIR}/custom") 
+
+if(EXISTS ${custom} AND IS_DIRECTORY ${custom})
+  add_subdirectory(${custom})
+endif()
